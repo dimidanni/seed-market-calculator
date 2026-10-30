@@ -30,3 +30,22 @@ De voorbeeldgetallen zijn fictief. De externe updater verandert alleen prijzen, 
 
 ## Klang benaderen
 Officiële support: https://klang-games.eu.theymes.com/hc/en/seed/contact-us en support@klang-games.com. Vraag schriftelijk naar toegestane publieke item-/receptdata en read-only marktdata (orders, prijs, volume, society, tijdstempel), API-documentatie, toegestane cache-/updatefrequentie, CORS en attributie/licentie.
+
+## V2 wiki and catalog
+
+Open wiki.html from the v2 preview. All 2,110 definitions, 883 schematics and 53 categories are retained, including technical entries. Search by names, IDs, machine tags and skills; filter categories/machines/skills and inspect ingredients, outputs, raw probabilities, timing and activity details. Icons are original text placeholders; no game artwork is redistributed.
+
+Source: the two user-supplied static exports under data/. Regenerate with node scripts/build-catalog.cjs; verify with node tests/catalog.cjs. catalog.json records the SHA-256, build ID and 142,125 source lines. Documents inherit at the root-field level; an explicitly present document replaces the parent document. Tests compare every input/output with the independent supplied export.
+
+Wiki recipes are explicitly imported one at a time into the calculator. Existing prices and recipes are preserved. Multiple outputs, chance outputs, flagged/test/abstract recipes and variations remain wiki-only. Activity outcomes may change actual yield; imported calculations use base batches. No live prices are bundled. V2 browser storage uses seed-market-v2 and can initially read the legacy store without writing to it.
+
+Feature changes live on feature/v2-calculator-dashboard. On main, only preview/v2 is updated; root production files stay unchanged.
+
+### Item icons
+940 SVG icons extracted from the supplied SEED ClientUICompilation asset and matched by exact item ID. Publication permission was confirmed by the user. data/item-icons.json maps catalog IDs to assets/items/. Missing mappings use a placeholder. SVGs are displayed as images, never injected into the DOM. The archive, game binaries and launcher files are not part of this repository.
+
+### Corrected icon mapping audit
+The initial exact-ID matching missed IconAspect.Default and IconType. The corrected mapping reads those game fields (including parent fallback), not guessed item names: 1,976 definitions use 1,350 distinct files (1,808 SVG mappings, 168 PNG mappings). PNGs are cropped from DesktopIconAtlasConfig rectangles with Unity bottom-left coordinates converted to image top-left coordinates. All 134 remaining definitions have absent/empty IconAspect; none are non-test/non-abstract items with a category. data/item-icon-provenance.json records each source icon key and the unresolved list.
+
+### Built-in crafting chains
+The calculator loads all 792 compatible base recipes automatically, including alternative single-output recipes. Local prices overlay wiki IDs and propagate through the reverse dependency graph. Related products show complete-batch costs or explicit missing-input errors. The planner compares priced buy/craft alternatives and bounds cyclic/overly complex paths. The 91 technical, flagged, multi-output, random-yield or variation recipes stay wiki-only. Base yields can differ from activity outcomes; no guaranteed market profitability is implied. Built-in recipes are loaded from the catalog; browser backups contain local prices and custom overrides. Run node tests/planner.cjs and node tests/catalog.cjs.

@@ -1,0 +1,21 @@
+const assert=require('node:assert/strict'),{overlay}=require('../price-compat.js'),{create}=require('../calculator-engine.js');
+const catalog=[{id:'GMT_HEMATITE',name:'Hematite Ore',ask:null,median:null,max:null},{id:'GMT_IRON',name:'Iron Ingot',ask:null}];
+const local=[{id:'hematite-ore',name:'  Hematite   Ore ',ask:75,median:100,max:48000}];
+const before=JSON.stringify(local);let effective=overlay(catalog,local);
+assert.equal(effective.find(i=>i.id==='GMT_HEMATITE').ask,75);
+assert.equal(create(effective,[]).plan('GMT_HEMATITE',1,'buy').cost,75);
+assert.equal(JSON.stringify(local),before);
+effective=overlay(catalog,[...local,{id:'GMT_HEMATITE',name:'Hematite Ore',ask:0,median:120}]);
+assert.equal(effective.find(i=>i.id==='GMT_HEMATITE').ask,0);
+assert.equal(effective.find(i=>i.id==='GMT_HEMATITE').median,120);
+assert.equal(overlay([...catalog,{id:'other',name:'Hematite Ore',ask:null}],local).find(i=>i.id==='GMT_HEMATITE').ask,null);
+assert.equal(overlay(catalog,[...local,{id:'duplicate',name:'Hematite Ore',ask:5}]).find(i=>i.id==='GMT_HEMATITE').ask,null);
+local[0].ask=90;assert.equal(overlay(catalog,local).find(i=>i.id==='GMT_HEMATITE').ask,90);
+console.log('PASS: legacy Hematite price 75 works with wiki ID; updates propagate; existing zero prices preserved; ambiguous names skipped; saved data unchanged');
+
+const {uniqueChoices}=require('../price-compat.js');
+const choices=uniqueChoices(overlay(catalog,local));
+assert.equal(choices.filter(i=>i.name.trim().replace(/\s+/g,' ').toLowerCase()==='hematite ore').length,1);
+assert.equal(choices.find(i=>i.name==='Hematite Ore').id,'GMT_HEMATITE');
+assert.equal(uniqueChoices([{id:'a',name:'Tree'},{id:'b',name:'Tree'}]).length,1);
+console.log('PASS: dropdown names deduplicated; wiki identity preferred over matching legacy item');

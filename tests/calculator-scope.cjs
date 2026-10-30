@@ -1,0 +1,11 @@
+const assert=require('node:assert/strict'),scope=require('../calculator-scope.js');
+const c=require('../data/catalog.json'),api=require('../catalog-api.js');
+for(const i of c.items.filter(i=>/\bdeposits?\b/i.test(i.name)))assert.equal(scope.allowedItem(i),false,i.name);
+for(const name of ['Hematite Ore','Lumber','Iron Ingot','Small Streetlamp','Birch Tree Seed'])assert.equal(scope.allowedItem(c.items.find(i=>i.name===name)),true,name);
+for(const name of ['Tree','Tree Stump','Yellow Nut Tree','Hematite Deposit'])assert.equal(scope.allowedItem(c.items.find(i=>i.name===name)),false,name);
+const blocked=new Set(c.items.filter(i=>!scope.allowedItem(i)).map(i=>i.id));
+const recipes=c.recipes.map(api.calculatorRecipe).filter(Boolean).filter(r=>scope.allowedRecipe(r,blocked));
+assert(recipes.some(r=>r.ingredients.some(i=>i.itemId==='GMT_MATERIAL_RAW_LUMBER')));
+assert.equal(scope.allowedRecipe({outputId:'lumber',ingredients:[{itemId:'manual-tree'}]},blocked),false);
+assert.equal(scope.allowedRecipe({outputId:'custom',ingredients:[{itemId:'old-deposit'}]},new Set(['old-deposit'])),false);
+console.log(`PASS: deposits and trees excluded, ore/Lumber/seeds/streetlamps retained; ${recipes.length} compatible recipes remain`);
