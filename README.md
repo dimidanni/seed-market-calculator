@@ -40,3 +40,6 @@ Source: the two user-supplied static exports under data/. Regenerate with node s
 Wiki recipes are explicitly imported one at a time into the calculator. Existing prices and recipes are preserved. Multiple outputs, chance outputs, flagged/test/abstract recipes and variations remain wiki-only. Activity outcomes may change actual yield; imported calculations use base batches. No live prices are bundled. V2 browser storage uses seed-market-v2 and can initially read the legacy store without writing to it.
 
 Feature changes live on feature/v2-calculator-dashboard. On main, only preview/v2 is updated; root production files stay unchanged.
+
+### Item icons
+940 SVG icons extracted from the supplied SEED ClientUICompilation asset and matched by exact item ID. Publication permission was confirmed by the user. data/item-icons.json maps catalog IDs to assets/items/. Missing mappings use a placeholder. SVGs are displayed as images, never injected into the DOM. The archive, game binaries and launcher files are not part of this repository.
