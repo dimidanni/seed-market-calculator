@@ -43,3 +43,6 @@ Feature changes live on feature/v2-calculator-dashboard. On main, only preview/v
 
 ### Item icons
 940 SVG icons extracted from the supplied SEED ClientUICompilation asset and matched by exact item ID. Publication permission was confirmed by the user. data/item-icons.json maps catalog IDs to assets/items/. Missing mappings use a placeholder. SVGs are displayed as images, never injected into the DOM. The archive, game binaries and launcher files are not part of this repository.
+
+### Corrected icon mapping audit
+The initial exact-ID matching missed IconAspect.Default and IconType. The corrected mapping reads those game fields (including parent fallback), not guessed item names: 1,976 definitions use 1,350 distinct files (1,808 SVG mappings, 168 PNG mappings). PNGs are cropped from DesktopIconAtlasConfig rectangles with Unity bottom-left coordinates converted to image top-left coordinates. All 134 remaining definitions have absent/empty IconAspect; none are non-test/non-abstract items with a category. data/item-icon-provenance.json records each source icon key and the unresolved list.
