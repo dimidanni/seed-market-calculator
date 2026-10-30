@@ -58,4 +58,30 @@ $('export').onclick=()=>{const blob=new Blob([JSON.stringify(db,null,2)],{type:'
 $('import').onchange=async e=>{try{const d=validate(JSON.parse(await e.target.files[0].text()));db=d;save();alert('Gegevens geïmporteerd')}catch(err){alert('Import mislukt: '+err.message)}e.target.value=''};
 $('reset').onclick=()=>{if(confirm('Alle lokale items en recepten wissen?')){db=structuredClone(starter);save()}};
 $('fetch').onclick=async()=>{try{const url=$('sourceUrl').value.trim(),u=new URL(url);if(u.protocol!=='https:')throw Error('Gebruik een HTTPS URL');const response=await fetch(url,{cache:'no-store'});if(!response.ok)throw Error('HTTP '+response.status);const incoming=JSON.parse(await response.text());if(!Array.isArray(incoming.items))throw Error('items ontbreekt');const merged=structuredClone(db);for(const i of incoming.items){if(typeof i.id!=='string'||typeof i.name!=='string'||(i.ask!==null&&(!Number.isFinite(i.ask)||i.ask<0))||(i.bid!==null&&(!Number.isFinite(i.bid)||i.bid<0)))throw Error('Ongeldige externe prijs');const existing=merged.items.find(x=>x.id===i.id);if(existing){existing.ask=i.ask;if(Object.hasOwn(i,'median'))existing.median=i.median;if(Object.hasOwn(i,'max'))existing.max=i.max}else merged.items.push({id:i.id,name:i.name,ask:i.ask,median:i.median??null,max:i.max??null})}merged.updatedAt=incoming.updatedAt||new Date().toISOString();merged.source=incoming.source||url;validate(merged);db=merged;save();alert('Prijzen bijgewerkt')}catch(e){alert('Ophalen mislukt: '+e.message)}};
-$('language').value=currentLanguage;$('language').onchange=e=>{currentLanguage=e.target.value;localStorage.setItem('seed-market-language',currentLanguage);location.reload()};render();addIngredient();translateUI();
+$('language').value=currentLanguage;$('language').onchange=e=>{currentLanguage=e.target.value;localStorage.setItem('seed-market-language',currentLanguage);location.reload()};
+// Import a user-provided, authorized catalog without overwriting existing prices or recipes.
+function mergeCatalog(incoming){
+ if(!incoming||!Array.isArray(incoming.items)||!Array.isArray(incoming.recipes))throw Error('Expected items and recipes arrays');
+ const next=structuredClone(db),ids=new Set(next.items.map(i=>i.id));let added=0,recipesAdded=0;
+ for(const i of incoming.items){
+  if(typeof i.id!=='string'||!i.id||typeof i.name!=='string'||!i.name)throw Error('Invalid catalog item');
+  if(!ids.has(i.id)){next.items.push({id:i.id,name:i.name,category:typeof i.category==='string'?i.category:'',ask:null,median:null,max:null,bid:null});ids.add(i.id);added++}
+ }
+ for(const r of incoming.recipes){
+  if(!ids.has(r.outputId)||!Number.isFinite(r.yield)||r.yield<=0||!Array.isArray(r.ingredients)||!r.ingredients.length||r.ingredients.some(x=>!ids.has(x.itemId)||!Number.isFinite(x.quantity)||x.quantity<=0))throw Error('Invalid recipe: '+r.outputId);
+  if(!next.recipes.some(x=>x.outputId===r.outputId)){next.recipes.push(structuredClone(r));recipesAdded++}
+ }
+ validate(next);
+ // Reject cyclic recipes, including cycles that have purchasable alternatives.
+ const byId=new Map(next.recipes.map(r=>[r.outputId,r]));
+ const visit=(id,stack=new Set(),done=new Set())=>{if(stack.has(id))throw Error('Circular recipe: '+id);if(done.has(id))return;stack.add(id);for(const ing of byId.get(id)?.ingredients||[])visit(ing.itemId,stack,done);stack.delete(id);done.add(id)};
+ const done=new Set();for(const r of next.recipes)visit(r.outputId,new Set(),done);
+ db=next;save();return {added,recipesAdded};
+}
+$('catalogImport').onchange=async e=>{
+ try{const file=e.target.files?.[0];if(!file)return;const stats=mergeCatalog(JSON.parse(await file.text()));alert(t('Catalog imported: ','Catalogus geïmporteerd: ')+stats.added+t(' items and ',' items en ')+stats.recipesAdded+t(' recipes. Existing prices preserved.',' recepten. Bestaande prijzen behouden.'))}
+ catch(err){alert(t('Catalog import failed: ','Catalogusimport mislukt: ')+err.message)}
+ finally{e.target.value=''}
+};
+
+render();addIngredient();translateUI();
