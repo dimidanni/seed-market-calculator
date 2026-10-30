@@ -8,8 +8,8 @@ function t(en,nl){return currentLanguage==='nl'?nl:en}
 
 let db=load();
 function validate(d){if(!d||!Array.isArray(d.items)||!Array.isArray(d.recipes))throw Error('Ongeldig JSON-formaat');const ids=new Set();for(const i of d.items){if(typeof i.id!=='string'||!i.id||typeof i.name!=='string'||ids.has(i.id)||(i.ask!==null&&(!Number.isFinite(i.ask)||i.ask<0))||(i.bid!=null&&(!Number.isFinite(i.bid)||i.bid<0)))throw Error('Ongeldig of dubbel item');if(i.median!=null&&(!Number.isFinite(i.median)||i.median<0))throw Error('Ongeldige marktmediaan');if(i.max!=null&&(!Number.isFinite(i.max)||i.max<0))throw Error('Invalid maximum price');ids.add(i.id)}for(const r of d.recipes){if(!ids.has(r.outputId)||!Number.isFinite(r.yield)||r.yield<=0||!Array.isArray(r.ingredients)||!r.ingredients.length)throw Error('Ongeldig recept');for(const ing of r.ingredients)if(!ids.has(ing.itemId)||!Number.isFinite(ing.quantity)||ing.quantity<=0)throw Error('Ongeldig ingrediënt')}return d}
-function load(){try{const data=validate(JSON.parse(localStorage.getItem('seed-market-v1')));for(const i of data.items)if(!Object.hasOwn(i,'max'))i.max=null;return data}catch{return structuredClone(starter)}}
-function save(){localStorage.setItem('seed-market-v1',JSON.stringify(db));render()}
+function load(){try{const data=validate(JSON.parse(localStorage.getItem('seed-market-v2') ?? localStorage.getItem('seed-market-v1')));for(const i of data.items)if(!Object.hasOwn(i,'max'))i.max=null;return data}catch{return structuredClone(starter)}}
+function save(){localStorage.setItem('seed-market-v2',JSON.stringify(db));render()}
 const get=id=>db.items.find(x=>x.id===id), recipe=id=>db.recipes.find(x=>x.outputId===id);
 function options(selected){return db.items.map(i=>`<option value="${escapeHTML(i.id)}" ${i.id===selected?'selected':''}>${escapeHTML(i.name)}</option>`).join('')}
 function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -85,3 +85,6 @@ $('catalogImport').onchange=async e=>{
 };
 
 render();addIngredient();translateUI();
+
+// Explicit recipe selection from the wiki; existing prices and recipes stay intact.
+(async()=>{const id=new URLSearchParams(location.search).get('recipe');if(!id)return;try{const response=await fetch('data/catalog.json');if(!response.ok)throw Error('HTTP '+response.status);const c=await response.json(),r=c.recipes.find(r=>r.id===id);if(!r)throw Error('Unknown recipe');mergeCatalog(SeedCatalog.importPayload(c,r));$('product').value=r.outputs[0].itemId;calculate();$('status').textContent='Wiki recipe loaded. Existing prices and recipes preserved. Costs use base batches; activity outcomes can alter yield.';}catch(e){$('status').textContent='Recipe import failed: '+e.message}})();

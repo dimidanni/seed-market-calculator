@@ -30,3 +30,13 @@ De voorbeeldgetallen zijn fictief. De externe updater verandert alleen prijzen, 
 
 ## Klang benaderen
 Officiële support: https://klang-games.eu.theymes.com/hc/en/seed/contact-us en support@klang-games.com. Vraag schriftelijk naar toegestane publieke item-/receptdata en read-only marktdata (orders, prijs, volume, society, tijdstempel), API-documentatie, toegestane cache-/updatefrequentie, CORS en attributie/licentie.
+
+## V2 wiki and catalog
+
+Open wiki.html from the v2 preview. All 2,110 definitions, 883 schematics and 53 categories are retained, including technical entries. Search by names, IDs, machine tags and skills; filter categories/machines/skills and inspect ingredients, outputs, raw probabilities, timing and activity details. Icons are original text placeholders; no game artwork is redistributed.
+
+Source: the two user-supplied static exports under data/. Regenerate with node scripts/build-catalog.cjs; verify with node tests/catalog.cjs. catalog.json records the SHA-256, build ID and 142,125 source lines. Documents inherit at the root-field level; an explicitly present document replaces the parent document. Tests compare every input/output with the independent supplied export.
+
+Wiki recipes are explicitly imported one at a time into the calculator. Existing prices and recipes are preserved. Multiple outputs, chance outputs, flagged/test/abstract recipes and variations remain wiki-only. Activity outcomes may change actual yield; imported calculations use base batches. No live prices are bundled. V2 browser storage uses seed-market-v2 and can initially read the legacy store without writing to it.
+
+Feature changes live on feature/v2-calculator-dashboard. On main, only preview/v2 is updated; root production files stay unchanged.
